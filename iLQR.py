@@ -216,7 +216,7 @@ class DiscreteTimeIterativeLQR:
         max_iterations = 5 # number of maximum iterations (forward + backward passes)
         J = np.zeros(max_iterations+1)
         J[0] = self.CalcJ(x, u, t0)
-        print "initial cost: ", J[0]
+        print ("initial cost: ", J[0])
         
         if is_logging_trajectories:
             x_log = x.copy()
@@ -293,7 +293,7 @@ class DiscreteTimeIterativeLQR:
                 x_log = np.append(x_log, x.reshape(1, x.shape[0], x.shape[1]), axis=0)
                 u_log = np.append(u_log, u.reshape(1, u.shape[0], u.shape[1]), axis=0)
                 
-            print "Iteration ", j, ", line search steps: ", line_search_count, ", J: ", J[j+1]   
+            print("Iteration ", j, ", line search steps: ", line_search_count, ", J: ", J[j+1])   
             cost_reduction = (J[j] - J[j+1])/J[j]
             j += 1
             if j >= max_iterations or cost_reduction < 0.01 or line_search_count > 5:

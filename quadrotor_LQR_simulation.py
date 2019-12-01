@@ -29,10 +29,10 @@ quad = builder.AddSystem(Quadrotor())
 class QuadLqrController(LeafSystem):
     def __init__(self):
         LeafSystem.__init__(self)
-        self._DeclareInputPort(PortDataType.kVectorValued, n)
-        self._DeclareVectorOutputPort(BasicVector(m), self._DoCalcVectorOutput)
-        self._DeclareDiscreteState(m) # state of the controller system is u
-        self._DeclarePeriodicDiscreteUpdate(period_sec=0.005) # update u at 200Hz
+        self.DeclareInputPort(PortDataType.kVectorValued, n)
+        self.DeclareVectorOutputPort(BasicVector(m), self._DoCalcVectorOutput)
+        self.DeclareDiscreteState(m) # state of the controller system is u
+        self.DeclarePeriodicDiscreteUpdate(period_sec=0.005) # update u at 200Hz
 
 
     # u(t) = -K.dot(x(t)) ==> y(t) = -K.dot(u)
@@ -42,7 +42,7 @@ class QuadLqrController(LeafSystem):
 
     def _DoCalcDiscreteVariableUpdates(self, context, events, discrete_state):
         # Call base method to ensure we do not get recursion.
-        LeafSystem._DoCalcDiscreteVariableUpdates(self, context, events, discrete_state)
+        LeafSystem.DoCalcDiscreteVariableUpdates(self, context, events, discrete_state)
 
         new_control_input = discrete_state.get_mutable_vector().get_mutable_value()
         x = self.EvalVectorInput(context, 0).get_value()

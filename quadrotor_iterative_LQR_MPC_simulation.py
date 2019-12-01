@@ -51,10 +51,10 @@ quad = builder.AddSystem(Quadrotor())
 class QuadIlqrMpcController(LeafSystem):
     def __init__(self):
         LeafSystem.__init__(self)
-        self._DeclareInputPort(PortDataType.kVectorValued, n)
-        self._DeclareVectorOutputPort(BasicVector(m), self._DoCalcVectorOutput)
-        self._DeclareDiscreteState(m) # state of the controller system is u
-        self._DeclarePeriodicDiscreteUpdate(period_sec=traj_specs.h) # update u every h seconds.
+        self.DeclareInputPort(PortDataType.kVectorValued, n)
+        self.DeclareVectorOutputPort(BasicVector(m), self._DoCalcVectorOutput)
+        self.DeclareDiscreteState(m) # state of the controller system is u
+        self.DeclarePeriodicDiscreteUpdate(period_sec=traj_specs.h) # update u every h seconds.
         self.is_plan_computed = False
 
     # u(t) = -K.dot(x(t)) ==> y(t) = -K.dot(u)
@@ -64,7 +64,7 @@ class QuadIlqrMpcController(LeafSystem):
         x_nominal, u_nominal, J, QN, Vx, Vxx, k, K = \
             planner.CalcTrajectory(traj_specs, t, is_logging_trajectories=False)
         u_next = u_nominal[0]
-        print "simulation time:", t
+        print("simulation time:", t)
         return u_next
 
 

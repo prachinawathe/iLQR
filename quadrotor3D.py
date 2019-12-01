@@ -308,11 +308,11 @@ def PlotTraj(x, dt = None, xw_list = None, t = None):
     
 # Defines a drake vector system for the quadrotor.
 class Quadrotor(VectorSystem):
-    def __init__(self):
+    def __init__(self): 
         VectorSystem.__init__(self,
             m,                           # No. of inputs.
             n)                           # No. of output.
-        self._DeclareContinuousState(n)
+        self.DeclareContinuousState(n) #OMKAR REMOVED UNDERSCORE
 #        self._DeclarePeriodicPublish(0.005)
 
     # define dynamics in a separate function, so that it can be passed to
@@ -369,20 +369,22 @@ if __name__ == '__main__':
 
     x0 = np.zeros(n)
     x[0] = x0
+    
+    timeVec = np.zeros(N+1)
 
     for i in range(N):
         x_u = np.hstack((x[i], -K0.dot(x[i]-xd) + ud))
         x[i+1] = x[i] + dt*CalcF(x_u)
+        timeVec[i] = timeVec[i-1] + dt
 
-    PlotTraj(x.copy(), dt)
+    #PlotTraj(x.copy(), dt)
 
-#    #%% open meshact
-#    vis = meshcat.Visualizer()
-#    vis.open
-#    
-#    
-#    #%% Meshcat animation
-#    PlotTrajectoryMeshcat(x, dt, vis)
+    #%% open meshact
+    vis = meshcat.Visualizer()
+    vis.open
+    
+    #%% Meshcat animation
+    PlotTrajectoryMeshcat(x, timeVec, vis)
 
 
 

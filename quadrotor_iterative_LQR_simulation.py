@@ -32,10 +32,10 @@ class QuadLqrController(LeafSystem):
         i = int(round(t/traj_specs.h))
         if i >= len(k):
             i = len(k) -1
-        print i, t
-        print 'u_nominal[i]:', u_nominal[i]
-        print 'k[i]:', k[i]
-        print 'K*x_error:', K[i].dot(x-x_nominal[i])
+        print(i, t)
+        print('u_nominal[i]:', u_nominal[i])
+        print('k[i]:', k[i])
+        print('K*x_error:', K[i].dot(x-x_nominal[i]))
         return u_nominal[i] + K[i].dot(x-x_nominal[i])
 
 
