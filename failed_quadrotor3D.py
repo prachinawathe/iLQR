@@ -246,9 +246,6 @@ def CalcF(x_u):
     x = x_u[0:n]
     u = x_u[n:n+m]
     
-    #MOD TO ZERO OUT rotor 4
-    #u[3] = 0.0
-    
     xdot = np.empty(x.shape, dtype=object)
 
     I_inv = LA.inv(I)
@@ -402,7 +399,7 @@ if __name__ == '__main__':
     
     #based on eq 51
     
-    force_bar = [2.05, 1.02, 2.05, 0]
+    force_bar = np.array([2.05, 1.02, 2.05, 0])
     
     omega_bar = np.sqrt(force_bar/kF)
     
@@ -417,13 +414,13 @@ if __name__ == '__main__':
     #B0 = partials[:, n:n+m]
     
     #define the A matrix for failed quad
-    Ae = np.zeros(6,6)
-    B0_f = np.zeros(4,2)
+    Ae = np.zeros([6,6])
+    B0_f = np.zeros([4,2])
     
     sigma_motor = 0.015
     
     #extended state
-    Be = np.zeros(4,2)
+    Be = np.zeros([6,2])
     
     r_hat = ((kF * kM)/gamma) * (omega_bar[0]**2  - omega_bar[1]**2 + omega_bar[2]**2 - omega_bar[3]**2)
     
@@ -433,9 +430,9 @@ if __name__ == '__main__':
     Ae[0,1] = a_bar
     Ae[1,0] = -1 * a_bar
     Ae[1,0] = -1 * a_bar
-    Ae[2,1] = -1 * n[2]
+    Ae[2,1] = -1 * n_bar[2]
     Ae[2,3] = r_hat
-    Ae[3,0] = n[2]
+    Ae[3,0] = n_bar[2]
     Ae[3,2] = -1* r_hat
     
     B0_f[1,0] = 1
@@ -446,10 +443,10 @@ if __name__ == '__main__':
     Ae[0:4,4:6] = B0_f
     
     Ae[4:6,4:6] = -1*np.eye(2)/sigma_motor
-    Be[2:4,0:2] = np.eye(2)/sigma_motor
+    Be[4:6,0:2] = np.eye(2)/sigma_motor
 
     #the failed matrix u
-    u_f = np.zeros(2,1)
+    u_f = np.zeros([2,1])
     
     Q = np.eye(n)
     Q[2:4,2:4]*= 20
@@ -458,7 +455,7 @@ if __name__ == '__main__':
     R = np.eye(m)
 
     # get LQR controller about the fixed point
-    K0, S0 = LinearQuadraticRegulator(A0, B0, Q, R)
+    K0, S0 = LinearQuadraticRegulator(Ae, Be, Q, R)
 
     # simulate stabilizing about fixed point using LQR controller
     dt = 0.001
@@ -466,8 +463,10 @@ if __name__ == '__main__':
     x = np.zeros((N+1, n))
 
     x0 = np.zeros(n)
-    x[0] = 5
-    x[1] = 5
+    x0[0] = 5
+    x0[1] = 5
+    
+    x[0] = x0
     # here, assume the nx and ny are initially zero
     # additional motor values are also set to zero
     
@@ -475,17 +474,29 @@ if __name__ == '__main__':
 
     for i in range(N):
         x_u = np.hstack((x[i], -K0.dot(x[i]-xd) + ud))
-        x[i+1] = x[i] + dt*CalcF(x_u)
+        xDot = Ae.dot(x[i]) + Be.dot(x_u[6:8])
+        x[i+1] = x[i] + dt*xDot
+        print(x[i+1])
         timeVec[i] = timeVec[i-1] + dt
 
     #PlotTraj(x.copy(), dt)
 
     #%% open meshact
-    vis = meshcat.Visualizer()
-    vis.open
+    #vis = meshcat.Visualizer()
+    #vis.open
     
     #%% Meshcat animation
-    PlotTrajectoryMeshcat(x, timeVec, vis)
+    #PlotTrajectoryMeshcat(x, timeVec, vis)
+    
+    #what we want to plot
+    
+    #Px
+    #Py
+    #Nx
+    #Ny
+    
+    #plot a setpoint line in each of these which is equal to the x_d
+    
 
 
 
