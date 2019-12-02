@@ -68,8 +68,8 @@ gamma = 2.75e-3
 
 l = 0.17
 
-n = 6 # 4 states
-m = 2 # 2 inputs for reduced system
+n = 5 # 4 states
+m = 1 # 2 inputs for reduced system
 # intertial and gravitational constants
 mass = 0.5
 
@@ -458,10 +458,10 @@ if __name__ == '__main__':
     omega_bar = [-619.0,0.0,-619.0,0.0]
 
     #define the A matrix for failed quad
-    Ae = np.zeros([6,6])
-    B0_f = np.zeros([4,2])
+    Ae = np.zeros([5,5])
+    B0_f = np.zeros([4,1])
     #extended state
-    Be = np.zeros([6,2])
+    Be = np.zeros([5,1])
     Q = np.eye(n)
     R = np.eye(m)
     R *= 0.75
@@ -471,8 +471,7 @@ if __name__ == '__main__':
     #define coupling constant
     a_bar = (I[0,0] - I[2,2])/I[0,0]
 
-    B0_f[1,0] = 1
-    B0_f[0,1] = 1
+    B0_f[1] = 1
     B0_f =  (l/I[0,0]) * B0_f
 
     Ae[0,1] = a_bar
@@ -482,17 +481,16 @@ if __name__ == '__main__':
     Ae[2,3] = r_hat
     Ae[3,0] = n_bar[2]
     Ae[3,2] = -1* r_hat
-    Ae[0:4,4:6] = B0_f
+    Ae[0:4,4:5] = B0_f
 
-    Ae[4:6,4:6] = -1*np.eye(2)/sigma_motor
-    Be[4:6,0:2] = np.eye(2)/sigma_motor
+    Ae[4,4] = -1*sigma_motor
+    Be[4] = 1/sigma_motor
 
     #the failed matrix u
     # u_f = np.zeros([2,1])
 
     Q[2,2]*= 1000
     Q[3,3]*= 2
-    Q[4:6,4:6]*= 0
 
     # get LQR controller about the fixed point
     K0, S0 = LinearQuadraticRegulator(Ae, Be, Q, R)
@@ -501,7 +499,8 @@ if __name__ == '__main__':
     dt = 0.001
     N = int(5.0/dt)
     x = np.zeros((N+1, n))
-    forces = np.zeros((N+1, 3))
+    forces = np.zeros((N+1, 4))
+    forces[0] = np.zeros(4)
 
     x0 = np.zeros(n)
     x0[0] = 5
@@ -515,17 +514,16 @@ if __name__ == '__main__':
 
     for i in range(N):
         x_u = np.hstack((x[i], -K0.dot(x[i]-xd) + ud))
-        xDot = Ae.dot(x[i]) + Be.dot(x_u[6:8])
+        xDot = Ae.dot(x[i]) + Be.dot(x_u[n:n+m])
         x[i+1] = x[i] + dt*xDot
         # print(x[i+1])
 
         u_i = -K0.dot(x[i]-xd) + ud
-        f = np.zeros(3)
-        f[1] = u_i[1] + force_bar[1]
-        f[2] = (u_i[0] + force_bar[2] + np.sum(force_bar) - f[1] - force_bar[0]) / 2
-        f[0] = np.sum(force_bar) - f[1] - f[2]
+        f = np.zeros(4)
+        f[2] = (u_i[0] + 2*force_bar[2])/2
+        f[0] = np.sum(force_bar) - f[2]
 
-        forces[i] = f
+        forces[i+1] = f
 
         timeVec[i] = timeVec[i-1] + dt
 
