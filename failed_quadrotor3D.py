@@ -347,15 +347,16 @@ def PlotTraj(x, dt = None, xw_list = None, t = None):
 
     plt.show()
 
-def PlotFailedTraj(x, dt = None, xw_list = None, t = None):
+def PlotFailedTraj(x, dt, xd, ud, t):
     x = x.copy() # removes reference to input variable.
     # add one dimension to x if x is 2D.
     if len(x.shape) == 2:
         x.resize(1, x.shape[0], x.shape[1])
 
-    if t is None:
-        N = x.shape[1]-1
-        t = dt*np.arange(N+1)
+    # if t is None:
+    #     N = x.shape[1]-1
+    #     t = dt*np.arange(N+1)
+
     Ni = x.shape[0]
 
     fig = plt.figure(figsize=(15,12), dpi = 100)
@@ -364,47 +365,30 @@ def PlotFailedTraj(x, dt = None, xw_list = None, t = None):
     ax_p.set_ylabel("p")
     ax_p.axhline(color='r', ls='--')
 
-    ax_y = fig.add_subplot(322)
-    ax_y.set_ylabel("y")
-    ax_y.axhline(color='r', ls='--')
+    ax_q = fig.add_subplot(322)
+    ax_q.set_ylabel("q")
+    ax_q.axhline(color='r', ls='--')
 
-    ax_z = fig.add_subplot(323)
-    ax_z.set_ylabel("z")
-    ax_z.axhline(color='r', ls='--')
+    ax_nx = fig.add_subplot(323)
+    ax_nx.set_ylabel("nx")
+    ax_nx.axhline(color='r', ls='--')
 
-    ax_roll = fig.add_subplot(324)
-    ax_roll.set_ylabel("roll(phi)")
-    ax_roll.set_xlabel("t")
-    ax_roll.axhline(color='r', ls='--')
+    ax_ny = fig.add_subplot(324)
+    ax_ny.set_ylabel("ny")
+    # ax_ny.set_xlabel("t")
+    ax_ny.axhline(color='r', ls='--')
 
-    ax_pitch = fig.add_subplot(325)
-    ax_pitch.set_ylabel("pitch(theta)")
-    ax_pitch.set_xlabel("t")
-    ax_pitch.axhline(color='r', ls='--')
-
-    ax_yaw = fig.add_subplot(326)
-    ax_yaw.set_ylabel("yaw(psi)")
-    ax_yaw.set_xlabel("t")
-    ax_yaw.axhline(color='r', ls='--')
+    print(x[0,:,0].shape)
 
     for j in range(Ni):
         ax_p.plot(t, x[j,:,0])
-        ax_p.plot(t, p_des)
-        ax_y.plot(t, x[j,:,1])
-        ax_z.plot(t, x[j,:,2])
-        ax_roll.plot(t, x[j,:,3])
-        ax_pitch.plot(t, x[j,:,4])
-        ax_yaw.plot(t, x[j,:,5])
-
-    # plot waypoints
-    if not(xw_list is None):
-        for xw in xw_list:
-            ax_x.plot(xw.t, xw.x[0], 'r*')
-            ax_y.plot(xw.t, xw.x[1], 'r*')
-            ax_z.plot(xw.t, xw.x[2], 'r*')
-            ax_roll.plot(xw.t, xw.x[3], 'r*')
-            ax_pitch.plot(xw.t, xw.x[4], 'r*')
-            ax_yaw.plot(xw.t, xw.x[5], 'r*')
+        ax_p.plot(t, xd[0]*np.ones(10001))
+        ax_q.plot(t, x[j,:,1])
+        ax_q.plot(t, xd[1]*np.ones(10001))
+        ax_nx.plot(t, x[j,:,2])
+        ax_nx.plot(t, xd[2]*np.ones(10001))
+        ax_ny.plot(t, x[j,:,3])
+        ax_ny.plot(t, xd[3]*np.ones(10001))
 
     plt.show()
 
@@ -463,14 +447,14 @@ if __name__ == '__main__':
     x_u = np.hstack((xd, ud))
 
     #based on eq 51
-    force_bar = [2.05, 1.02, 2.05, 0]
+    force_bar = np.array([2.05, 1.02, 2.05, 0])
     omega_bar = np.sqrt(force_bar/kF)
 
     #define the A matrix for failed quad
-    Ae = np.zeros(6,6)
-    B0_f = np.zeros(4,2)
+    Ae = np.zeros([6,6])
+    B0_f = np.zeros([4,2])
     #extended state
-    Be = np.zeros(4,2)
+    Be = np.zeros([6,2])
     Q = np.eye(n)
     R = np.eye(m)
 
@@ -486,17 +470,17 @@ if __name__ == '__main__':
     Ae[0,1] = a_bar
     Ae[1,0] = -1 * a_bar
     Ae[1,0] = -1 * a_bar
-    Ae[2,1] = -1 * n[2]
+    Ae[2,1] = -1 * n_bar[2]
     Ae[2,3] = r_hat
-    Ae[3,0] = n[2]
+    Ae[3,0] = n_bar[2]
     Ae[3,2] = -1* r_hat
     Ae[0:4,4:6] = B0_f
 
     Ae[4:6,4:6] = -1*np.eye(2)/sigma_motor
-    Be[2:4,0:2] = np.eye(2)/sigma_motor
+    Be[4:6,0:2] = np.eye(2)/sigma_motor
 
     #the failed matrix u
-    u_f = np.zeros(2,1)
+    u_f = np.zeros([2,1])
 
     Q[2:4,2:4]*= 20
     Q[4:6,4:6]*= 0
@@ -519,11 +503,12 @@ if __name__ == '__main__':
 
     for i in range(N):
         x_u = np.hstack((x[i], -K0.dot(x[i]-xd) + ud))
-        xDot = Ae * x[i] + Be * x_u[6:8]
+        xDot = Ae.dot(x[i]) + Be.dot(x_u[6:8])
         x[i+1] = x[i] + dt*xDot
+        print(x[i+1])
         timeVec[i] = timeVec[i-1] + dt
 
-    PlotFailedTraj(x.copy(), dt)
+    PlotFailedTraj(x.copy(), dt, xd, ud, timeVec)
 
     #%% open meshact
     # vis = meshcat.Visualizer()
