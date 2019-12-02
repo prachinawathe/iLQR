@@ -500,6 +500,7 @@ if __name__ == '__main__':
     N = int(5.0/dt)
     x = np.zeros((N+1, n))
     forces = np.zeros((N+1, 3))
+    forces[0] = np.zeros(3)
 
     x0 = np.zeros(n)
     x0[0] = 5
@@ -510,6 +511,7 @@ if __name__ == '__main__':
     # additional motor values are also set to zero
 
     timeVec = np.zeros(N+1)
+    timeVec[0] = 0
 
     for i in range(N):
         x_u = np.hstack((x[i], -K0.dot(x[i]-xd) + ud))
@@ -523,9 +525,9 @@ if __name__ == '__main__':
         f[2] = (u_i[0] + force_bar[2] + np.sum(force_bar) - f[1] - force_bar[0]) / 2
         f[0] = np.sum(force_bar) - f[1] - f[2]
 
-        forces[i] = f
+        forces[i+1] = f
 
-        timeVec[i] = timeVec[i-1] + dt
+        timeVec[i+1] = timeVec[i] + dt
 
     PlotFailedTraj(x.copy(), dt, xd, ud, timeVec, forces)
 

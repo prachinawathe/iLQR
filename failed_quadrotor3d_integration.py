@@ -485,6 +485,7 @@ def plot_forces(forces, timeVec, p, q, num_rotors, f_bar, omega_by):
     ax_f.plot(t, forces[:,1], label='rotor 2')
     ax_f.plot(t, forces[:,2], label='rotor 3')
     ax_f.plot(t, forces[:,3], label='rotor 4')
+    print(f_bar)
     ax_f.plot(t[N:2*N], f_bar[0]*np.ones(N), color='r', ls='--')
     ax_f.plot(t[N:2*N], f_bar[1]*np.ones(N), color='r', ls='--')
 
@@ -515,8 +516,8 @@ def one_rotor_loss():
     K0, S0 = LinearQuadraticRegulator(A0, B0, Q, R)
 
     # simulate stabilizing about fixed point using LQR controller
-    dt = 0.001
-    N = int(2.0/dt)
+    # dt = 0.001
+    # N = int(2.0/dt)
     x = np.zeros((N+1, n))
 
     x0 = np.zeros(n)
@@ -649,8 +650,8 @@ def two_rotor_loss():
     K0, S0 = LinearQuadraticRegulator(A0, B0, Q, R)
 
     # simulate stabilizing about fixed point using LQR controller
-    dt = 0.001
-    N = int(2.0/dt)
+    # dt = 0.001
+    # N = int(2.0/dt)
     x = np.zeros((N+1, n))
 
     x0 = np.zeros(n)
@@ -678,10 +679,10 @@ def two_rotor_loss():
     #%% Meshcat animation
     # PlotTrajectoryMeshcat(x, timeVec, vis)
 
-    # at timestamp N=5.0 seconds, rotor 4 fails and we switch control systems
-    n = 6
-    m = 2
-    #for failure of rotor 4, omega_hat_4 = 0
+    #for failure of rotor 4 and 2, omega_hat_4 = omega_hat_2= 0
+    n = 5
+    m = 1
+    kF = 6.41e-6
     n_bar = [0.0,0.0,1.0]
     sigma_motor = 0.015
 
@@ -699,10 +700,10 @@ def two_rotor_loss():
     omega_bar = [-619.0,0.0,-619.0,0.0]
 
     #define the A matrix for failed quad
-    Ae = np.zeros([6,6])
+    Ae = np.zeros([5,5])
     B0_f = np.zeros([4,1])
     #extended state
-    Be = np.zeros([6,1])
+    Be = np.zeros([5,1])
     Q = np.eye(n)
     R = np.eye(m)
     R *= 0.75
@@ -712,8 +713,7 @@ def two_rotor_loss():
     #define coupling constant
     a_bar = (I[0,0] - I[2,2])/I[0,0]
 
-    B0_f[1,0] = 1
-    B0_f[0,1] = 1
+    B0_f[1] = 1
     B0_f =  (l/I[0,0]) * B0_f
 
     Ae[0,1] = a_bar
@@ -723,17 +723,16 @@ def two_rotor_loss():
     Ae[2,3] = r_hat
     Ae[3,0] = n_bar[2]
     Ae[3,2] = -1* r_hat
-    Ae[0:4,4:6] = B0_f
+    Ae[0:4,4:5] = B0_f
 
-    Ae[4:6,4:6] = -1*np.eye(2)/sigma_motor
-    Be[4:6,0:2] = np.eye(2)/sigma_motor
+    Ae[4,4] = -1*sigma_motor
+    Be[4] = 1/sigma_motor
 
     #the failed matrix u
     # u_f = np.zeros([2,1])
 
     Q[2,2]*= 1000
     Q[3,3]*= 2
-    Q[4:6,4:6]*= 0
 
     # get LQR controller about the fixed point
     K0, S0 = LinearQuadraticRegulator(Ae, Be, Q, R)
@@ -742,7 +741,7 @@ def two_rotor_loss():
     # dt = 0.001
     # N = int(5.0/dt)
     x = np.zeros((N+1, n))
-    # forces = np.zeros((N, 4))
+    # forces = np.zeros((N+1, 4))
     # forces[0] = np.zeros(4)
 
     x0 = np.zeros(n)
@@ -759,25 +758,29 @@ def two_rotor_loss():
         x_u = np.hstack((x[i], -K0.dot(x[i]-xd) + ud))
         all_p[i+N] = x[i,0]
         all_q[i+N] = x[i,1]
-        xDot = Ae.dot(x[i]) + Be.dot(x_u[6:8])
+        xDot = Ae.dot(x[i]) + Be.dot(x_u[n:n+m])
         x[i+1] = x[i] + dt*xDot
-        print(x[i,1])
+
+        # print(x[i,1])
 
         u_i = -K0.dot(x[i]-xd) + ud
-        f = get_forces(u_i, force_bar)
-
-        # x_mesh[i+1] = x_mesh[i] + dt*CalcF(np.hstack((x_mesh[i], f)))
+        f = np.zeros(4)
+        f[2] = (u_i[0] + 2*force_bar[2])/2
+        f[0] = np.sum(force_bar) - f[2]
 
         forces[i+N] = f
+
         timeVec[i+N] = timeVec[i-1+N] + dt
 
-    PlotFailedTraj(x.copy(), dt, xd, ud, timeVec[N:2*N+1], forces[N-1:2*N+1])
-    # plot_forces(forces, timeVec, all_p, all_q, 2, force_bar, omega_bar[1])
+    # PlotFailedTraj(x.copy(), dt, xd, ud, timeVec, forces)
+    print(timeVec.shape)
+    print(force_bar.shape)
+    plot_forces(forces, timeVec, all_p, all_q, 2, force_bar, omega_bar[1])
 
 if __name__ == '__main__':
     # simulate quadrotor w/ LQR controller using forward Euler integration.
     # fixed point
     dt = 0.001
-    N = int(2.0/dt)
+    N = int(5.0/dt)
 
     two_rotor_loss()
