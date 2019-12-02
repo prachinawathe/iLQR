@@ -458,31 +458,43 @@ class Quadrotor(VectorSystem):
             # "None", i.e. "I don't know."
             return None
 
-def get_forces(u_i):
+def get_forces(u_i, force_bar):
     f = np.zeros(4)
     f[1] = u_i[1] + force_bar[1]
     f[2] = (u_i[0] + force_bar[2] + np.sum(force_bar) - f[1] - force_bar[0]) / 2
     f[0] = np.sum(force_bar) - f[1] - f[2]
     return f
 
-def plot_forces(forces, timeVec, p, q):
+def plot_forces(forces, timeVec, p, q, num_rotors, f_bar, omega_by):
     fig = plt.figure(figsize=(3,1))
     ax_f = fig.add_subplot(311)
+    if num_rotors is 1:
+        plt.title('Quadrotor Behavior with Single Rotor Failure at t = 2')
+    else:
+        plt.title('Quadrotor Behavior with Dual Rotor Failure at t = 2')
+    ax_f.set_ylabel('Rotor Forces')
     ax_p = fig.add_subplot(312)
+    ax_p.set_ylabel('Roll Rate')
     ax_q = fig.add_subplot(313)
+    ax_q.set_ylabel('Pitch Rate')
+    ax_q.set_xlabel('time')
+
     t = timeVec[0:len(timeVec)-1]
 
     ax_f.plot(t, forces[:,0], label='rotor 1')
     ax_f.plot(t, forces[:,1], label='rotor 2')
     ax_f.plot(t, forces[:,2], label='rotor 3')
     ax_f.plot(t, forces[:,3], label='rotor 4')
-    plt.legend()
+    ax_f.plot(t[N:2*N], f_bar[0]*np.ones(N), color='r', ls='--')
+    ax_f.plot(t[N:2*N], f_bar[1]*np.ones(N), color='r', ls='--')
 
     ax_p.plot(t, p, label='pitch rate')
+    ax_p.plot(t[N:2*N], 0*np.ones(N), color='r', ls='--')
     ax_q.plot(t, q, label='roll rate')
+    ax_q.plot(t[N:2*N], omega_by*np.ones(N), color='r', ls='--')
     plt.show()
 
-if __name__ == '__main__':
+def one_rotor_loss():
     # simulate quadrotor w/ LQR controller using forward Euler integration.
     # fixed point
 
@@ -504,7 +516,7 @@ if __name__ == '__main__':
 
     # simulate stabilizing about fixed point using LQR controller
     dt = 0.001
-    N = int(5.0/dt)
+    N = int(2.0/dt)
     x = np.zeros((N+1, n))
 
     x0 = np.zeros(n)
@@ -606,7 +618,7 @@ if __name__ == '__main__':
         print(x[i,1])
 
         u_i = -K0.dot(x[i]-xd) + ud
-        f = get_forces(u_i)
+        f = get_forces(u_i, force_bar)
 
         # x_mesh[i+1] = x_mesh[i] + dt*CalcF(np.hstack((x_mesh[i], f)))
 
@@ -614,4 +626,158 @@ if __name__ == '__main__':
 
         timeVec[i+N] = timeVec[i-1+N] + dt
 
-    plot_forces(forces, timeVec, all_p, all_q)
+    plot_forces(forces, timeVec, all_p, all_q, 1, force_bar, omega_bar[1])
+
+def two_rotor_loss():
+    # simulate quadrotor w/ LQR controller using forward Euler integration.
+    # fixed point
+
+    n = 12
+    m = 4
+    xd = np.zeros(n)
+    xd[0:2] = [2,1]
+    ud = np.zeros(m)
+    ud[:] = mass * g / 4
+    x_u = np.hstack((xd, ud))
+    partials = jacobian(CalcF, x_u)
+    A0 = partials[:, 0:n]
+    B0 = partials[:, n:n+m]
+    Q = 10*np.eye(n)
+    R = np.eye(m)
+
+    # get LQR controller about the fixed point
+    K0, S0 = LinearQuadraticRegulator(A0, B0, Q, R)
+
+    # simulate stabilizing about fixed point using LQR controller
+    dt = 0.001
+    N = int(2.0/dt)
+    x = np.zeros((N+1, n))
+
+    x0 = np.zeros(n)
+    x[0] = x0
+
+    timeVec = np.zeros(2*N+1)
+    all_p = np.zeros(2*N)
+    all_q = np.zeros(2*N)
+    # keeping track of all forces on the quadrotors to show how they adapt
+    forces = np.zeros((2*N, 4))
+
+    for i in range(N):
+        x_u = np.hstack((x[i], -K0.dot(x[i]-xd) + ud))
+        all_p[i] = x_u[9]
+        all_q[i] = x_u[10]
+        forces[i] = x_u[12:16]
+        print(forces[i])
+        x[i+1] = x[i] + dt*CalcF(x_u)
+        timeVec[i] = timeVec[i-1] + dt
+
+    #%% open meshact
+    # vis = meshcat.Visualizer()
+    # vis.open
+
+    #%% Meshcat animation
+    # PlotTrajectoryMeshcat(x, timeVec, vis)
+
+    # at timestamp N=5.0 seconds, rotor 4 fails and we switch control systems
+    n = 6
+    m = 2
+    #for failure of rotor 4, omega_hat_4 = 0
+    n_bar = [0.0,0.0,1.0]
+    sigma_motor = 0.015
+
+    #from eq 51
+    xd = np.zeros(n) #p,q are set to 0
+    xd[2] = n_bar[0] #nx
+    xd[3] = n_bar[1] #ny
+    ud = np.zeros(m) #zero because u is in error coordinates
+    x_u = np.hstack((xd, ud))
+
+    #based on eq 51
+    force_bar = np.array([2.45, 0.0, 2.45, 0.0])
+
+    #omega_bar = np.sqrt(force_bar/kF) explicitly calcualted in paper
+    omega_bar = [-619.0,0.0,-619.0,0.0]
+
+    #define the A matrix for failed quad
+    Ae = np.zeros([6,6])
+    B0_f = np.zeros([4,1])
+    #extended state
+    Be = np.zeros([6,1])
+    Q = np.eye(n)
+    R = np.eye(m)
+    R *= 0.75
+
+    r_hat = ((kF * kM)/gamma) * (omega_bar[0]**2  - omega_bar[1]**2 + omega_bar[2]**2 - omega_bar[3]**2)
+
+    #define coupling constant
+    a_bar = (I[0,0] - I[2,2])/I[0,0]
+
+    B0_f[1,0] = 1
+    B0_f[0,1] = 1
+    B0_f =  (l/I[0,0]) * B0_f
+
+    Ae[0,1] = a_bar
+    Ae[1,0] = -1 * a_bar
+    Ae[1,0] = -1 * a_bar
+    Ae[2,1] = -1 * n_bar[2]
+    Ae[2,3] = r_hat
+    Ae[3,0] = n_bar[2]
+    Ae[3,2] = -1* r_hat
+    Ae[0:4,4:6] = B0_f
+
+    Ae[4:6,4:6] = -1*np.eye(2)/sigma_motor
+    Be[4:6,0:2] = np.eye(2)/sigma_motor
+
+    #the failed matrix u
+    # u_f = np.zeros([2,1])
+
+    Q[2,2]*= 1000
+    Q[3,3]*= 2
+    Q[4:6,4:6]*= 0
+
+    # get LQR controller about the fixed point
+    K0, S0 = LinearQuadraticRegulator(Ae, Be, Q, R)
+
+    # simulate stabilizing about fixed point using LQR controller
+    # dt = 0.001
+    # N = int(5.0/dt)
+    x = np.zeros((N+1, n))
+    # forces = np.zeros((N, 4))
+    # forces[0] = np.zeros(4)
+
+    x0 = np.zeros(n)
+    x0[0] = 5
+    x0[1] = 5
+    x[0] = x0
+
+    # here, assume the nx and ny are initially zero
+    # additional motor values are also set to zero
+
+    # timeVec = np.zeros(N+1)
+
+    for i in range(N):
+        x_u = np.hstack((x[i], -K0.dot(x[i]-xd) + ud))
+        all_p[i+N] = x[i,0]
+        all_q[i+N] = x[i,1]
+        xDot = Ae.dot(x[i]) + Be.dot(x_u[6:8])
+        x[i+1] = x[i] + dt*xDot
+        print(x[i,1])
+
+        u_i = -K0.dot(x[i]-xd) + ud
+        f = get_forces(u_i, force_bar)
+
+        # x_mesh[i+1] = x_mesh[i] + dt*CalcF(np.hstack((x_mesh[i], f)))
+
+        forces[i+N] = f
+        timeVec[i+N] = timeVec[i-1+N] + dt
+
+    PlotFailedTraj(x.copy(), dt, xd, ud, timeVec[N:2*N+1], forces[N-1:2*N+1])
+    # plot_forces(forces, timeVec, all_p, all_q, 2, force_bar, omega_bar[1])
+
+if __name__ == '__main__':
+    # simulate quadrotor w/ LQR controller using forward Euler integration.
+    # fixed point
+    dt = 0.001
+    N = int(2.0/dt)
+
+    two_rotor_loss()
