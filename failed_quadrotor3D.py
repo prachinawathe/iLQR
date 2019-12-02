@@ -347,7 +347,7 @@ def PlotTraj(x, dt = None, xw_list = None, t = None):
 
     plt.show()
 
-def PlotFailedTraj(x, dt, xd, ud, t):
+def PlotFailedTraj(x, dt, xd, ud, t, f):
     x = x.copy() # removes reference to input variable.
     # add one dimension to x if x is 2D.
     if len(x.shape) == 2:
@@ -378,17 +378,25 @@ def PlotFailedTraj(x, dt, xd, ud, t):
     # ax_ny.set_xlabel("t")
     ax_ny.axhline(color='r', ls='--')
 
+    ax_f = fig.add_subplot(325)
+    ax_f.set_ylabel("forces 1 2 and 3")
+    # ax_ny.set_xlabel("t")
+    ax_f.axhline(color='r', ls='--')
+
     print(x[0,:,0].shape)
 
     for j in range(Ni):
         ax_p.plot(t, x[j,:,0])
-        ax_p.plot(t, xd[0]*np.ones(10001))
+        ax_p.plot(t, xd[0]*np.ones(N+1))
         ax_q.plot(t, x[j,:,1])
-        ax_q.plot(t, xd[1]*np.ones(10001))
+        ax_q.plot(t, xd[1]*np.ones(N+1))
         ax_nx.plot(t, x[j,:,2])
-        ax_nx.plot(t, xd[2]*np.ones(10001))
+        ax_nx.plot(t, xd[2]*np.ones(N+1))
         ax_ny.plot(t, x[j,:,3])
-        ax_ny.plot(t, xd[3]*np.ones(10001))
+        ax_ny.plot(t, xd[3]*np.ones(N+1))
+        ax_f.plot(t, f[:,0])
+        ax_f.plot(t, f[:,1])
+        ax_f.plot(t, f[:,2])
 
     plt.show()
 
@@ -480,7 +488,7 @@ if __name__ == '__main__':
     Be[4:6,0:2] = np.eye(2)/sigma_motor
 
     #the failed matrix u
-    u_f = np.zeros([2,1])
+    # u_f = np.zeros([2,1])
 
     Q[2:4,2:4]*= 20
     Q[4:6,4:6]*= 0
@@ -490,12 +498,15 @@ if __name__ == '__main__':
 
     # simulate stabilizing about fixed point using LQR controller
     dt = 0.001
-    N = int(10.0/dt)
+    N = int(5.0/dt)
     x = np.zeros((N+1, n))
+    forces = np.zeros((N+1, 3))
 
     x0 = np.zeros(n)
-    x[0] = 5
-    x[1] = 5
+    x0[0] = 5
+    x0[1] = 5
+    x[0] = x0
+
     # here, assume the nx and ny are initially zero
     # additional motor values are also set to zero
 
@@ -505,10 +516,19 @@ if __name__ == '__main__':
         x_u = np.hstack((x[i], -K0.dot(x[i]-xd) + ud))
         xDot = Ae.dot(x[i]) + Be.dot(x_u[6:8])
         x[i+1] = x[i] + dt*xDot
-        print(x[i+1])
+        # print(x[i+1])
+
+        u_i = -K0.dot(x[i]-xd) + ud
+        f = np.zeros(3)
+        f[1] = u_i[1] + force_bar[1]
+        f[2] = (u_i[0] + force_bar[2] + np.sum(force_bar) - f[1] - force_bar[0]) / 2
+        f[0] = np.sum(force_bar) - f[1] - f[2]
+
+        forces[i] = f
+
         timeVec[i] = timeVec[i-1] + dt
 
-    PlotFailedTraj(x.copy(), dt, xd, ud, timeVec)
+    PlotFailedTraj(x.copy(), dt, xd, ud, timeVec, forces)
 
     #%% open meshact
     # vis = meshcat.Visualizer()
