@@ -126,7 +126,7 @@ def CalcPhiD(rpy):
     cp = cos(pitch)
     cp2 = cp**2
     tp = sp/cp
-    
+
     Phi_D = np.empty((3,3,3), dtype=object)
     Phi_D[:,0,:] = 0.0
     Phi_D[0, 1] = [cr * tp, sr / cp2, 0]
@@ -140,34 +140,34 @@ def CalcPhiD(rpy):
 
 
 # t is a 1D numpy array of time. The quadrotor has state x[i] at time t[i].
-# wpts has shape (N, 3), where wpts[i] is the Cartesian coordinate of waypoint i. 
+# wpts has shape (N, 3), where wpts[i] is the Cartesian coordinate of waypoint i.
 def PlotTrajectoryMeshcat(x, t, vis, wpts_list = None):
     # initialize
     vis.delete()
-    
+
     # plot waypoints
     if not(wpts_list is None):
         for i, wpts in enumerate(wpts_list):
-            vis["wpt_%d" % i].set_object(geometry.Sphere(0.03), 
+            vis["wpt_%d" % i].set_object(geometry.Sphere(0.03),
                                          geometry.MeshLambertMaterial(color=0xffff00))
             T_wp = tf.translation_matrix(wpts)
             vis["wpt_%d" % i].set_transform(T_wp)
-    
-    
+
+
     d_prop = 0.10 # propeller diameter
-    vis["quad"]["CG"].set_object(geometry.Sphere(0.03), 
+    vis["quad"]["CG"].set_object(geometry.Sphere(0.03),
                                      geometry.MeshLambertMaterial(color=0x00ffff))
     vis["quad"]["body"].set_object(geometry.Box([0.2, 0.1, 0.1]),
                                    geometry.MeshLambertMaterial(color=0x404040))
-    vis["quad"]["prop0"].set_object(geometry.Cylinder(0.01, d_prop), 
+    vis["quad"]["prop0"].set_object(geometry.Cylinder(0.01, d_prop),
                                     geometry.MeshLambertMaterial(color=0x00ff00))
     vis["quad"]["prop1"].set_object(geometry.Cylinder(0.01, d_prop),
                                     geometry.MeshLambertMaterial(color=0xff0000))
     vis["quad"]["prop2"].set_object(geometry.Cylinder(0.01, d_prop),
                                     geometry.MeshLambertMaterial(color=0xffffff))
-    vis["quad"]["prop3"].set_object(geometry.Cylinder(0.01, d_prop), 
+    vis["quad"]["prop3"].set_object(geometry.Cylinder(0.01, d_prop),
                                     geometry.MeshLambertMaterial(color=0xffffff))
-    
+
     Rx_prop = CalcRx(np.pi/2)
     TB = tf.translation_matrix([0,0,-0.05])
     T0 = tf.translation_matrix([l, -l, 0])
@@ -178,19 +178,19 @@ def PlotTrajectoryMeshcat(x, t, vis, wpts_list = None):
     T1[0:3,0:3] = Rx_prop
     T2[0:3,0:3] = Rx_prop
     T3[0:3,0:3] = Rx_prop
-    
+
     vis["quad"]["body"].set_transform(TB)
     vis["quad"]["prop0"].set_transform(T0)
     vis["quad"]["prop1"].set_transform(T1)
     vis["quad"]["prop2"].set_transform(T2)
     vis["quad"]["prop3"].set_transform(T3)
-    
+
     # visualize trajectory
     time.sleep(1.0)
     N = len(x)
     if not (t is None):
         assert N == len(t)
-        
+
     for i, xi in enumerate(x):
         xyz = xi[0:3]
         rpy = xi[3:6]
@@ -244,13 +244,13 @@ def CalcF(x_u):
     xdot[6:9] = xyz_dd
     xdot[9:12] = rpy_dd
     return xdot
-    
+
 def PlotTraj(x, dt = None, xw_list = None, t = None):
     x = x.copy() # removes reference to input variable.
-    # add one dimension to x if x is 2D. 
+    # add one dimension to x if x is 2D.
     if len(x.shape) == 2:
         x.resize(1, x.shape[0], x.shape[1])
-    
+
     if t is None:
         N = x.shape[1]-1
         t = dt*np.arange(N+1)
@@ -283,8 +283,8 @@ def PlotTraj(x, dt = None, xw_list = None, t = None):
     ax_yaw = fig.add_subplot(326)
     ax_yaw.set_ylabel("yaw(psi)")
     ax_yaw.set_xlabel("t")
-    ax_yaw.axhline(color='r', ls='--')    
-    
+    ax_yaw.axhline(color='r', ls='--')
+
     for j in range(Ni):
         ax_x.plot(t, x[j,:,0])
         ax_y.plot(t, x[j,:,1])
@@ -292,7 +292,7 @@ def PlotTraj(x, dt = None, xw_list = None, t = None):
         ax_roll.plot(t, x[j,:,3])
         ax_pitch.plot(t, x[j,:,4])
         ax_yaw.plot(t, x[j,:,5])
-    
+
     # plot waypoints
     if not(xw_list is None):
         for xw in xw_list:
@@ -302,13 +302,13 @@ def PlotTraj(x, dt = None, xw_list = None, t = None):
             ax_roll.plot(xw.t, xw.x[3], 'r*')
             ax_pitch.plot(xw.t, xw.x[4], 'r*')
             ax_yaw.plot(xw.t, xw.x[5], 'r*')
-    
+
     plt.show()
-    
-    
+
+
 # Defines a drake vector system for the quadrotor.
 class Quadrotor(VectorSystem):
-    def __init__(self): 
+    def __init__(self):
         VectorSystem.__init__(self,
             m,                           # No. of inputs.
             n)                           # No. of output.
@@ -328,7 +328,7 @@ class Quadrotor(VectorSystem):
     # y(t) = x(t)
     def _DoCalcVectorOutput(self, context, u, x, y):
         y[:] = x
-    
+
     ### copied from Greg's pset code. (set1, custom_pendulum.py, line67-79)
     # The Drake simulation backend is very careful to avoid
     # algebraic loops when systems are connected in feedback.
@@ -343,7 +343,7 @@ class Quadrotor(VectorSystem):
             # For other combinations of i/o, we will return
             # "None", i.e. "I don't know."
             return None
-    
+
 
 if __name__ == '__main__':
     # simulate quadrotor w/ LQR controller using forward Euler integration.
@@ -369,7 +369,7 @@ if __name__ == '__main__':
 
     x0 = np.zeros(n)
     x[0] = x0
-    
+
     timeVec = np.zeros(N+1)
 
     for i in range(N):
@@ -382,10 +382,6 @@ if __name__ == '__main__':
     #%% open meshact
     vis = meshcat.Visualizer()
     vis.open
-    
+
     #%% Meshcat animation
     PlotTrajectoryMeshcat(x, timeVec, vis)
-
-
-
-
