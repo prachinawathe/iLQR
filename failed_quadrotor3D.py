@@ -532,8 +532,8 @@ if __name__ == '__main__':
     PlotFailedTraj(x.copy(), dt, xd, ud, timeVec, forces)
 
     #%% open meshact
-    # vis = meshcat.Visualizer()
-    # vis.open
+    vis = meshcat.Visualizer()
+    vis.open
 
     #%% Meshcat animation
     PlotTrajectoryMeshcat(x, timeVec, vis)

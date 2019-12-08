@@ -307,65 +307,65 @@ def CalcF(x_u):
     xdot[9:12] = rpy_dd
     return xdot
 
-def PlotTraj(x, dt = None, xw_list = None, t = None):
-    x = x.copy() # removes reference to input variable.
-    # add one dimension to x if x is 2D.
-    if len(x.shape) == 2:
-        x.resize(1, x.shape[0], x.shape[1])
-
-    if t is None:
-        N = x.shape[1]-1
-        t = dt*np.arange(N+1)
-    Ni = x.shape[0]
-
-    fig = plt.figure(figsize=(15,12), dpi = 100)
-
-    ax_x = fig.add_subplot(321)
-    ax_x.set_ylabel("x")
-    ax_x.axhline(color='r', ls='--')
-
-    ax_y = fig.add_subplot(322)
-    ax_y.set_ylabel("y")
-    ax_y.axhline(color='r', ls='--')
-
-    ax_z = fig.add_subplot(323)
-    ax_z.set_ylabel("z")
-    ax_z.axhline(color='r', ls='--')
-
-    ax_roll = fig.add_subplot(324)
-    ax_roll.set_ylabel("roll(phi)")
-    ax_roll.set_xlabel("t")
-    ax_roll.axhline(color='r', ls='--')
-
-    ax_pitch = fig.add_subplot(325)
-    ax_pitch.set_ylabel("pitch(theta)")
-    ax_pitch.set_xlabel("t")
-    ax_pitch.axhline(color='r', ls='--')
-
-    ax_yaw = fig.add_subplot(326)
-    ax_yaw.set_ylabel("yaw(psi)")
-    ax_yaw.set_xlabel("t")
-    ax_yaw.axhline(color='r', ls='--')
-
-    for j in range(Ni):
-        ax_x.plot(t, x[j,:,0])
-        ax_y.plot(t, x[j,:,1])
-        ax_z.plot(t, x[j,:,2])
-        ax_roll.plot(t, x[j,:,3])
-        ax_pitch.plot(t, x[j,:,4])
-        ax_yaw.plot(t, x[j,:,5])
-
-    # plot waypoints
-    if not(xw_list is None):
-        for xw in xw_list:
-            ax_x.plot(xw.t, xw.x[0], 'r*')
-            ax_y.plot(xw.t, xw.x[1], 'r*')
-            ax_z.plot(xw.t, xw.x[2], 'r*')
-            ax_roll.plot(xw.t, xw.x[3], 'r*')
-            ax_pitch.plot(xw.t, xw.x[4], 'r*')
-            ax_yaw.plot(xw.t, xw.x[5], 'r*')
-
-    plt.show()
+# def PlotTraj(x, dt = None, xw_list = None, t = None):
+#     x = x.copy() # removes reference to input variable.
+#     # add one dimension to x if x is 2D.
+#     if len(x.shape) == 2:
+#         x.resize(1, x.shape[0], x.shape[1])
+#
+#     if t is None:
+#         N = x.shape[1]-1
+#         t = dt*np.arange(N+1)
+#     Ni = x.shape[0]
+#
+#     fig = plt.figure(figsize=(15,12), dpi = 100)
+#
+#     ax_x = fig.add_subplot(321)
+#     ax_x.set_ylabel("x")
+#     ax_x.axhline(color='r', ls='--')
+#
+#     ax_y = fig.add_subplot(322)
+#     ax_y.set_ylabel("y")
+#     ax_y.axhline(color='r', ls='--')
+#
+#     ax_z = fig.add_subplot(323)
+#     ax_z.set_ylabel("z")
+#     ax_z.axhline(color='r', ls='--')
+#
+#     ax_roll = fig.add_subplot(324)
+#     ax_roll.set_ylabel("roll(phi)")
+#     ax_roll.set_xlabel("t")
+#     ax_roll.axhline(color='r', ls='--')
+#
+#     ax_pitch = fig.add_subplot(325)
+#     ax_pitch.set_ylabel("pitch(theta)")
+#     ax_pitch.set_xlabel("t")
+#     ax_pitch.axhline(color='r', ls='--')
+#
+#     ax_yaw = fig.add_subplot(326)
+#     ax_yaw.set_ylabel("yaw(psi)")
+#     ax_yaw.set_xlabel("t")
+#     ax_yaw.axhline(color='r', ls='--')
+#
+#     for j in range(Ni):
+#         ax_x.plot(t, x[j,:,0])
+#         ax_y.plot(t, x[j,:,1])
+#         ax_z.plot(t, x[j,:,2])
+#         ax_roll.plot(t, x[j,:,3])
+#         ax_pitch.plot(t, x[j,:,4])
+#         ax_yaw.plot(t, x[j,:,5])
+#
+#     # plot waypoints
+#     if not(xw_list is None):
+#         for xw in xw_list:
+#             ax_x.plot(xw.t, xw.x[0], 'r*')
+#             ax_y.plot(xw.t, xw.x[1], 'r*')
+#             ax_z.plot(xw.t, xw.x[2], 'r*')
+#             ax_roll.plot(xw.t, xw.x[3], 'r*')
+#             ax_pitch.plot(xw.t, xw.x[4], 'r*')
+#             ax_yaw.plot(xw.t, xw.x[5], 'r*')
+#
+#     plt.show()
 
 def PlotFailedTraj(x, dt, xd, ud, t, f):
     x = x.copy() # removes reference to input variable.
@@ -420,43 +420,43 @@ def PlotFailedTraj(x, dt, xd, ud, t, f):
 
     plt.show()
 
-# Defines a drake vector system for the quadrotor.
-class Quadrotor(VectorSystem):
-    def __init__(self):
-        VectorSystem.__init__(self,
-            m,                           # No. of inputs.
-            n)                           # No. of output.
-        self.DeclareContinuousState(n) #OMKAR REMOVED UNDERSCORE
-#        self._DeclarePeriodicPublish(0.005)
-
-    # define dynamics in a separate function, so that it can be passed to
-    # ForwardDiff.jacobian for derivatives.
-    def f(self, x_u):
-        return CalcF(x_u)
-
-    # xdot(t) = -x(t) + x^3(t)
-    def _DoCalcVectorTimeDerivatives(self, context, u, x, xdot):
-        x_u = np.hstack((x.flatten(), u.flatten()))
-        xdot[:] = self.f(x_u)
-
-    # y(t) = x(t)
-    def _DoCalcVectorOutput(self, context, u, x, y):
-        y[:] = x
-
-    ### copied from Greg's pset code. (set1, custom_pendulum.py, line67-79)
-    # The Drake simulation backend is very careful to avoid
-    # algebraic loops when systems are connected in feedback.
-    # This system does not feed its inputs directly to its
-    # outputs (the output is only a function of the state),
-    # so we can safely tell the simulator that we don't have
-    # any direct feedthrough.
-    def _DoHasDirectFeedthrough(self, input_port, output_port):
-        if input_port == 0 and output_port == 0:
-            return False
-        else:
-            # For other combinations of i/o, we will return
-            # "None", i.e. "I don't know."
-            return None
+# # Defines a drake vector system for the quadrotor.
+# class Quadrotor(VectorSystem):
+#     def __init__(self):
+#         VectorSystem.__init__(self,
+#             m,                           # No. of inputs.
+#             n)                           # No. of output.
+#         self.DeclareContinuousState(n) #OMKAR REMOVED UNDERSCORE
+# #        self._DeclarePeriodicPublish(0.005)
+#
+#     # define dynamics in a separate function, so that it can be passed to
+#     # ForwardDiff.jacobian for derivatives.
+#     def f(self, x_u):
+#         return CalcF(x_u)
+#
+#     # xdot(t) = -x(t) + x^3(t)
+#     def _DoCalcVectorTimeDerivatives(self, context, u, x, xdot):
+#         x_u = np.hstack((x.flatten(), u.flatten()))
+#         xdot[:] = self.f(x_u)
+#
+#     # y(t) = x(t)
+#     def _DoCalcVectorOutput(self, context, u, x, y):
+#         y[:] = x
+#
+#     ### copied from Greg's pset code. (set1, custom_pendulum.py, line67-79)
+#     # The Drake simulation backend is very careful to avoid
+#     # algebraic loops when systems are connected in feedback.
+#     # This system does not feed its inputs directly to its
+#     # outputs (the output is only a function of the state),
+#     # so we can safely tell the simulator that we don't have
+#     # any direct feedthrough.
+#     def _DoHasDirectFeedthrough(self, input_port, output_port):
+#         if input_port == 0 and output_port == 0:
+#             return False
+#         else:
+#             # For other combinations of i/o, we will return
+#             # "None", i.e. "I don't know."
+#             return None
 
 def get_forces(u_i, force_bar):
     f = np.zeros(4)
@@ -783,4 +783,5 @@ if __name__ == '__main__':
     dt = 0.001
     N = int(5.0/dt)
 
+    # one_rotor_loss()
     two_rotor_loss()
