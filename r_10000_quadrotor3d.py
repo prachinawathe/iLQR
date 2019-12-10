@@ -349,7 +349,8 @@ if __name__ == '__main__':
     # simulate quadrotor w/ LQR controller using forward Euler integration.
     # fixed point
     xd = np.zeros(n)
-    xd[0:2] = [2,1]
+    #xd[0:2] = [0,0]
+    xd[2] = 3
     ud = np.zeros(m)
     ud[:] = mass * g / 4
     x_u = np.hstack((xd, ud))
@@ -390,9 +391,7 @@ if __name__ == '__main__':
         print(u_i)
         timeVec[i+N] = timeVec[i+N-1] + dt
 
-
-    # PlotTraj(x.copy(), dt)
-
+    
     #%% open meshact
     vis = meshcat.Visualizer()
     vis.open
