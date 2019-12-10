@@ -508,7 +508,9 @@ def one_rotor_loss():
     x_u = np.hstack((xd, ud))
     partials = jacobian(CalcF, x_u)
     A0 = partials[:, 0:n]
+    print(A0)
     B0 = partials[:, n:n+m]
+    print(B0)
     Q = 10*np.eye(n)
     R = np.eye(m)
 
@@ -562,6 +564,7 @@ def one_rotor_loss():
 
     #based on eq 51
     force_bar = np.array([2.05, 1.02, 2.05, 0])
+    # force_bar = np.array([1.02, 2.05, 1.02, 0])
     omega_bar = np.sqrt(force_bar/kF)
 
     #define the A matrix for failed quad
@@ -603,6 +606,8 @@ def one_rotor_loss():
     K0, S0 = LinearQuadraticRegulator(Ae, Be, Q, R)
 
     # simulate stabilizing about fixed point using LQR controller
+    x_mesh = np.zeros((N+1, 12))
+    x_mesh[0] = x[N]
     x = np.zeros((N+1, n))
 
     x0 = np.zeros(n)
@@ -616,7 +621,7 @@ def one_rotor_loss():
         all_q[i+N] = x[i,1]
         xDot = Ae.dot(x[i]) + Be.dot(x_u[6:8])
         x[i+1] = x[i] + dt*xDot
-        print(x[i,1])
+        # print(x[i,1])
 
         u_i = -K0.dot(x[i]-xd) + ud
         f = get_forces(u_i, force_bar)
@@ -626,8 +631,19 @@ def one_rotor_loss():
         forces[i+N] = f
 
         timeVec[i+N] = timeVec[i-1+N] + dt
+        x_mesh[i+1] = x_mesh[i] + dt*CalcF(np.hstack([x_mesh[i], f]))
+        x_mesh[i+1,9] = x[i+1,0]
+        x_mesh[i+1,10] = x[i+1,1]
+        print(x_mesh[i+1])
 
-    plot_forces(forces, timeVec, all_p, all_q, 1, force_bar, omega_bar[1])
+    # plot_forces(forces, timeVec, all_p, all_q, 1, force_bar, omega_bar[1])
+
+    #%% open meshact
+    vis = meshcat.Visualizer()
+    vis.open
+
+    #%% Meshcat animation
+    PlotTrajectoryMeshcat(x_mesh, timeVec[N:2*N+1], vis)
 
 def two_rotor_loss():
     # simulate quadrotor w/ LQR controller using forward Euler integration.
@@ -783,5 +799,5 @@ if __name__ == '__main__':
     dt = 0.001
     N = int(5.0/dt)
 
-    # one_rotor_loss()
-    two_rotor_loss()
+    one_rotor_loss()
+    # two_rotor_loss()
