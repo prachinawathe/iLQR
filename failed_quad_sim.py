@@ -307,65 +307,65 @@ def CalcF(x_u):
     xdot[9:12] = rpy_dd
     return xdot
 
-# def PlotTraj(x, dt = None, xw_list = None, t = None):
-#     x = x.copy() # removes reference to input variable.
-#     # add one dimension to x if x is 2D.
-#     if len(x.shape) == 2:
-#         x.resize(1, x.shape[0], x.shape[1])
-#
-#     if t is None:
-#         N = x.shape[1]-1
-#         t = dt*np.arange(N+1)
-#     Ni = x.shape[0]
-#
-#     fig = plt.figure(figsize=(15,12), dpi = 100)
-#
-#     ax_x = fig.add_subplot(321)
-#     ax_x.set_ylabel("x")
-#     ax_x.axhline(color='r', ls='--')
-#
-#     ax_y = fig.add_subplot(322)
-#     ax_y.set_ylabel("y")
-#     ax_y.axhline(color='r', ls='--')
-#
-#     ax_z = fig.add_subplot(323)
-#     ax_z.set_ylabel("z")
-#     ax_z.axhline(color='r', ls='--')
-#
-#     ax_roll = fig.add_subplot(324)
-#     ax_roll.set_ylabel("roll(phi)")
-#     ax_roll.set_xlabel("t")
-#     ax_roll.axhline(color='r', ls='--')
-#
-#     ax_pitch = fig.add_subplot(325)
-#     ax_pitch.set_ylabel("pitch(theta)")
-#     ax_pitch.set_xlabel("t")
-#     ax_pitch.axhline(color='r', ls='--')
-#
-#     ax_yaw = fig.add_subplot(326)
-#     ax_yaw.set_ylabel("yaw(psi)")
-#     ax_yaw.set_xlabel("t")
-#     ax_yaw.axhline(color='r', ls='--')
-#
-#     for j in range(Ni):
-#         ax_x.plot(t, x[j,:,0])
-#         ax_y.plot(t, x[j,:,1])
-#         ax_z.plot(t, x[j,:,2])
-#         ax_roll.plot(t, x[j,:,3])
-#         ax_pitch.plot(t, x[j,:,4])
-#         ax_yaw.plot(t, x[j,:,5])
-#
-#     # plot waypoints
-#     if not(xw_list is None):
-#         for xw in xw_list:
-#             ax_x.plot(xw.t, xw.x[0], 'r*')
-#             ax_y.plot(xw.t, xw.x[1], 'r*')
-#             ax_z.plot(xw.t, xw.x[2], 'r*')
-#             ax_roll.plot(xw.t, xw.x[3], 'r*')
-#             ax_pitch.plot(xw.t, xw.x[4], 'r*')
-#             ax_yaw.plot(xw.t, xw.x[5], 'r*')
-#
-#     plt.show()
+def PlotTraj(x, dt = None, xw_list = None, t = None):
+    x = x.copy() # removes reference to input variable.
+    # add one dimension to x if x is 2D.
+    if len(x.shape) == 2:
+        x.resize(1, x.shape[0], x.shape[1])
+
+    if t is None:
+        N = x.shape[1]-1
+        t = dt*np.arange(N+1)
+    Ni = x.shape[0]
+
+    fig = plt.figure(figsize=(15,12), dpi = 100)
+
+    ax_x = fig.add_subplot(321)
+    ax_x.set_ylabel("x rate")
+    ax_x.axhline(color='r', ls='--')
+
+    ax_y = fig.add_subplot(322)
+    ax_y.set_ylabel("y rate")
+    ax_y.axhline(color='r', ls='--')
+
+    ax_z = fig.add_subplot(323)
+    ax_z.set_ylabel("z rate")
+    ax_z.axhline(color='r', ls='--')
+
+    ax_roll = fig.add_subplot(324)
+    ax_roll.set_ylabel("roll(phi) rate")
+    ax_roll.set_xlabel("t")
+    ax_roll.axhline(color='r', ls='--')
+
+    ax_pitch = fig.add_subplot(325)
+    ax_pitch.set_ylabel("pitch(theta) rate")
+    ax_pitch.set_xlabel("t")
+    ax_pitch.axhline(color='r', ls='--')
+
+    ax_yaw = fig.add_subplot(326)
+    ax_yaw.set_ylabel("yaw(psi) rate")
+    ax_yaw.set_xlabel("t")
+    ax_yaw.axhline(color='r', ls='--')
+
+    for j in range(Ni):
+        ax_x.plot(t, x[j,:,0])
+        ax_y.plot(t, x[j,:,1])
+        ax_z.plot(t, x[j,:,2])
+        ax_roll.plot(t, x[j,:,3])
+        ax_pitch.plot(t, x[j,:,4])
+        ax_yaw.plot(t, x[j,:,5])
+
+    # plot waypoints
+    if not(xw_list is None):
+        for xw in xw_list:
+            ax_x.plot(xw.t, xw.x[0], 'r*')
+            ax_y.plot(xw.t, xw.x[1], 'r*')
+            ax_z.plot(xw.t, xw.x[2], 'r*')
+            ax_roll.plot(xw.t, xw.x[3], 'r*')
+            ax_pitch.plot(xw.t, xw.x[4], 'r*')
+            ax_yaw.plot(xw.t, xw.x[5], 'r*')
+
+    plt.show()
 
 def PlotFailedTraj(x, dt, xd, ud, t, f):
     x = x.copy() # removes reference to input variable.
@@ -488,11 +488,15 @@ def plot_forces(forces, timeVec, p, q, num_rotors, f_bar, omega_by):
     print(f_bar)
     ax_f.plot(t[N:2*N], f_bar[0]*np.ones(N), color='r', ls='--')
     ax_f.plot(t[N:2*N], f_bar[1]*np.ones(N), color='r', ls='--')
+    ax_f.axvline(x=.8, label='point of failure', color='black', ls='--')
+    ax_f.axvline(x=1, label='switch controllers', color='purple', ls='--')
+    ax_f.legend()
 
     ax_p.plot(t, p, label='pitch rate')
     ax_p.plot(t[N:2*N], 0*np.ones(N), color='r', ls='--')
     ax_q.plot(t, q, label='roll rate')
-    ax_q.plot(t[N:2*N], omega_by*np.ones(N), color='r', ls='--')
+    ax_q.plot(t[N:2*N], 0*np.ones(N), color='r', ls='--')
+    # plt.legend()
     plt.show()
 
 def one_rotor_loss():
@@ -502,7 +506,8 @@ def one_rotor_loss():
     n = 12
     m = 4
     xd = np.zeros(n)
-    xd[0:2] = [2,1]
+    # xd[0:2] = [2,1]
+    xd[2] = 3
     ud = np.zeros(m)
     ud[:] = mass * g / 4
     x_u = np.hstack((xd, ud))
@@ -518,7 +523,7 @@ def one_rotor_loss():
     # simulate stabilizing about fixed point using LQR controller
     # dt = 0.001
     # N = int(2.0/dt)
-    x = np.zeros((N+1, n))
+    x = np.zeros((2*N+1, n))
 
     x0 = np.zeros(n)
     x[0] = x0
@@ -531,12 +536,15 @@ def one_rotor_loss():
 
     for i in range(N):
         x_u = np.hstack((x[i], -K0.dot(x[i]-xd) + ud))
+        if i > 0.8/dt:
+            x_u[15] = 0
         all_p[i] = x_u[9]
         all_q[i] = x_u[10]
         forces[i] = x_u[12:16]
         print(forces[i])
         x[i+1] = x[i] + dt*CalcF(x_u)
         timeVec[i] = timeVec[i-1] + dt
+
 
     #%% open meshact
     # vis = meshcat.Visualizer()
@@ -562,30 +570,8 @@ def one_rotor_loss():
 
     #based on eq 51
     force_bar = np.array([2.05, 1.02, 2.05, 0])
-    # force_bar = np.array([1.02, 2.05, 1.02, 0])
     omega_bar = np.sqrt(force_bar/kF)
 
-    n12 = 12
-    m12 = 4
-    x12 = np.zeros([12])
-    x12[2] = 1 # set z to be 1
-    x12[9] = xd[0]
-    x12[10] = xd[1]
-    x_u12 = np.hstack([x12, force_bar])
-    partials = jacobian(CalcF, x_u12)
-    A0_12 = partials[:, 0:n12]
-
-    B0_12 = partials[:, n12:n12+m12]
-    B0_12[:,3] = 0
-    Q12 = 10*np.eye(n12)
-    Q12[3,3] = 0
-    Q12[4,4] = 0
-    Q12[5,5] = 0
-    Q12[9,9] = 0
-    Q12[10,10] = 0
-    Q12[11,11] = 0
-    R12 = np.eye(m12)
-    R12[m12-1, m12-1] = 10000
 
     #define the A matrix for failed quad
     Ae = np.zeros([6,6])
@@ -625,11 +611,10 @@ def one_rotor_loss():
     # get LQR controller about the fixed point
     K0, S0 = LinearQuadraticRegulator(Ae, Be, Q, R)
 
-    K12state, S12state = LinearQuadraticRegulator(A0_12, B0_12, Q12, R12)
+    # K12state, S12state = LinearQuadraticRegulator(A0_12, B0_12, Q12, R12)
 
     # simulate stabilizing about fixed point using LQR controller
-    x_mesh = np.zeros((N+1, 12))
-    x_mesh[0] = x[N]
+    x_mesh = x
     x = np.zeros((N+1, n))
 
     x0 = np.zeros(n)
@@ -641,7 +626,7 @@ def one_rotor_loss():
         x_u = np.hstack((x[i], -K0.dot(x[i]-xd) + ud))
         all_p[i+N] = x[i,0]
         all_q[i+N] = x[i,1]
-        xDot = Ae.dot(x[i]) + Be.dot(x_u[6:8])
+        xDot = Ae.dot(x[i]) + Be.dot(x_u[n:n+m])
         x[i+1] = x[i] + dt*xDot
         # print(x[i,1])
 
@@ -653,19 +638,19 @@ def one_rotor_loss():
         forces[i+N] = f
 
         timeVec[i+N] = timeVec[i-1+N] + dt
-        x_mesh[i+1] = x_mesh[i] + dt*CalcF(np.hstack([x_mesh[i], -K12state.dot(x_mesh[i]-x12) + f]))
-        # x_mesh[i+1,9] = x[i+1,0]
-        # x_mesh[i+1,10] = x[i+1,1]
-        print(x_mesh[i+1])
+        x_mesh[i+N+1] = x_mesh[i+N] + dt*CalcF(np.hstack([x_mesh[i+N], f]))
+        x_mesh[i+N+1,9] = x[i+1,0]
+        x_mesh[i+N+1,10] = x[i+1,1]
+        print(x_mesh[i+N+1])
 
-    # plot_forces(forces, timeVec, all_p, all_q, 1, force_bar, omega_bar[1])
+    plot_forces(forces, timeVec, all_p, all_q, 1, force_bar, omega_bar[1])
 
-    #%% open meshact
-    vis = meshcat.Visualizer()
-    vis.open
-
-    #%% Meshcat animation
-    PlotTrajectoryMeshcat(x_mesh, timeVec[N:2*N+1], vis)
+    # #%% open meshact
+    # vis = meshcat.Visualizer()
+    # vis.open
+    #
+    # #%% Meshcat animation
+    # PlotTrajectoryMeshcat(x_mesh, timeVec, vis)
 
 def two_rotor_loss():
     # simulate quadrotor w/ LQR controller using forward Euler integration.
@@ -674,7 +659,7 @@ def two_rotor_loss():
     n = 12
     m = 4
     xd = np.zeros(n)
-    xd[0:2] = [2,1]
+    xd[2] = 3
     ud = np.zeros(m)
     ud[:] = mass * g / 4
     x_u = np.hstack((xd, ud))
@@ -703,6 +688,9 @@ def two_rotor_loss():
 
     for i in range(N):
         x_u = np.hstack((x[i], -K0.dot(x[i]-xd) + ud))
+        if i > 0.8/dt:
+            x_u[15] = 0
+            x_u[13] = 0
         all_p[i] = x_u[9]
         all_q[i] = x_u[10]
         forces[i] = x_u[12:16]
@@ -815,20 +803,21 @@ def two_rotor_loss():
     # PlotFailedTraj(x.copy(), dt, xd, ud, timeVec, forces)
     print(timeVec.shape)
     print(force_bar.shape)
-    # plot_forces(forces, timeVec, all_p, all_q, 2, force_bar, omega_bar[1])
+    # PlotTraj(xmesh[:,6:12], dt)
+    plot_forces(forces, timeVec, all_p, all_q, 2, force_bar, omega_bar[1])
 
     # %% open meshact
-    vis = meshcat.Visualizer()
-    vis.open
+    # vis = meshcat.Visualizer()
+    # vis.open
 
     # %% Meshcat animation
-    PlotTrajectoryMeshcat(xmesh, timeVec, vis)
+    # PlotTrajectoryMeshcat(xmesh, timeVec, vis)
 
 if __name__ == '__main__':
     # simulate quadrotor w/ LQR controller using forward Euler integration.
     # fixed point
     dt = 0.001
-    N = int(5.0/dt)
+    N = int(1.0/dt)
 
     # one_rotor_loss()
     two_rotor_loss()

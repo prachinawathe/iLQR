@@ -42,7 +42,7 @@ mass = 0.5
 I = np.array([[0.0023, 0, 0],
               [0, 0.0023, 0],
               [0, 0, 0.0040]])
-g = 10.
+g = 9.8
 
 
 def CalcRx(phi):
@@ -259,29 +259,29 @@ def PlotTraj(x, dt = None, xw_list = None, t = None):
     fig = plt.figure(figsize=(15,12), dpi = 100)
 
     ax_x = fig.add_subplot(321)
-    ax_x.set_ylabel("x")
+    ax_x.set_ylabel("x rate")
     ax_x.axhline(color='r', ls='--')
 
     ax_y = fig.add_subplot(322)
-    ax_y.set_ylabel("y")
+    ax_y.set_ylabel("y rate")
     ax_y.axhline(color='r', ls='--')
 
     ax_z = fig.add_subplot(323)
-    ax_z.set_ylabel("z")
+    ax_z.set_ylabel("z rate")
     ax_z.axhline(color='r', ls='--')
 
     ax_roll = fig.add_subplot(324)
-    ax_roll.set_ylabel("roll(phi)")
+    ax_roll.set_ylabel("roll(phi) rate")
     ax_roll.set_xlabel("t")
     ax_roll.axhline(color='r', ls='--')
 
     ax_pitch = fig.add_subplot(325)
-    ax_pitch.set_ylabel("pitch(theta)")
+    ax_pitch.set_ylabel("pitch(theta) rate")
     ax_pitch.set_xlabel("t")
     ax_pitch.axhline(color='r', ls='--')
 
     ax_yaw = fig.add_subplot(326)
-    ax_yaw.set_ylabel("yaw(psi)")
+    ax_yaw.set_ylabel("yaw(psi) rate")
     ax_yaw.set_xlabel("t")
     ax_yaw.axhline(color='r', ls='--')
 
@@ -382,19 +382,19 @@ if __name__ == '__main__':
     # make a prop fail, see how various values change
 
 
-    for i in range(int(N/4)):
+    for i in range(int(N/8)):
         u_i = -K0.dot(x[i+N]-xd) + ud
         u_i[3] = 0
-        u_i[1] = 0  # uncomment this line to run two rotor failure
+        # u_i[1] = 0  # uncomment this line to run two rotor failure
         x_u = np.hstack((x[i+N], u_i))
         x[i+N+1] = x[i+N] + dt*CalcF(x_u)
         print(u_i)
         timeVec[i+N] = timeVec[i+N-1] + dt
 
-    
+    PlotTraj(x[:,6:n], dt)
     #%% open meshact
-    vis = meshcat.Visualizer()
-    vis.open
+    # vis = meshcat.Visualizer()
+    # vis.open
 
     #%% Meshcat animation
-    PlotTrajectoryMeshcat(x, timeVec, vis)
+    # PlotTrajectoryMeshcat(x, timeVec, vis)
